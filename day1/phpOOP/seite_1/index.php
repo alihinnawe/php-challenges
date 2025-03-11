@@ -1,7 +1,7 @@
 <?php 
 	$siteTitle = "Typografie";
 	$pageTitle= "Textgestaltung";
-	include 'inc/header.inc.php';
+	include 'include/header.php';
 ?>
 	<main>
 		<h2> <?php echo $pageTitle ?></h2>
@@ -11,5 +11,5 @@
 		Cras dapibus. Vivamus elementum semper nisi. Aenean vulputate eleifend tellus.</p>
 	</main>
 <?php 
-		include 'inc/footer.inc.php';
+		include 'include/footer.php';
 ?>

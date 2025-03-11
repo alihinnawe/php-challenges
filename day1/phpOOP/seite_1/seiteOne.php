@@ -1,7 +1,7 @@
 <?php
 	$siteTitle = "Weißraum";
 	$pageTitle = "white space";
-	include 'inc/header.inc.php';
+	include 'include/header.php';
 ?>
 
 <main>
@@ -16,5 +16,5 @@
 </main>
 
 <?php 
-	include 'inc/footer.inc.php';
+	include 'include/footer.php';
 ?>

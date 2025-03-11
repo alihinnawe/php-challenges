@@ -7,7 +7,7 @@
         $username = $_POST['username'] ?? '';
         $password = $_POST['password'] ?? '';
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-        $storedHashedPassword = "$2y$10$6RiKqYx52cZeS2Xk2UrMg.PX2o8/iF8qto3KTpZlFqzpglyvpI3lm";
+        $storedHashedPassword = "your hash";
 		
         if (password_verify($password, $storedHashedPassword)) {
             echo "<h2>" . htmlspecialchars($pageTitle) . "</h2>";

@@ -1,82 +1,82 @@
 <html>
-   <head>
-      <title>Übung OOP</title>
-      <link href="css/style.css" rel="stylesheet" type="text/css"/>
-   </head>
-   <body>
-   <h3>Übung o1 oop ()</h3>
-   <p>Legen Sie eine Klasse für ein Produkt an und schützen Sie die Eigenschaften vor einem Zugriff von aussen.</p>
-       <h3>Lösung o1 oop ()</h3>
+<head>
+    <title>Übung OOP</title>
+    <link href="css/style.css" rel="stylesheet" type="text/css"/>
+</head>
+<body>
+<h3>Übung o1 oop ()</h3>
+<p>Legen Sie eine Klasse für ein Produkt an und schützen Sie die Eigenschaften vor einem Zugriff von aussen.</p>
+<h3>Lösung o1 oop ()</h3>
 
-   <?php
+<?php
 
-   class Product {
-       private String $pName;
-       private String $pType;
-       private int $articleNbr = 0;
+class Product {
+    private String $pName;
+    private String $pType;
+    private int $articleNbr = 0;
 
 
-       public function __construct(String $name, String $type) {
-           $this -> pName = $name;
-           $this -> pType = $type;
-       }
-       public  function testi () : String {
+    public function __construct(String $name, String $type) {
+        $this -> pName = $name;
+        $this -> pType = $type;
+    }
+    public  function testi () : String {
+        echo "\t\n";
+        return "product name is: " .  $this ->pName . " type: " . $this ->pType . " article number: " . $this -> articleNbr . "\n" . "\t" . ";";
+    }
 
-           return "product name is: " .  $this ->pName . " type: " . $this ->pType . "\n";
-       }
+    public function setValue(int $articelNumber ) : int {
 
-       public function setValue(int $articelNumber ) : int {
+        $this -> articleNbr = $articelNumber;
+        return  $this -> articleNbr;
+    }
+    public function getArticleNbrValue() : int {
+        return $this -> articleNbr;
+    }
+}
 
-           $this -> articleNbr = $articelNumber;
-           return  $this -> articleNbr;
-       }
-       public function getArticleNbrValue() : int {
-           return $this -> articleNbr;
-       }
-   }
+class ProductsArray extends Product {
 
-   class ProductsArray extends Product {
+    private $productsArray = [];
+    public function setProcuctArray($arrayOfProducts) : Array {
+        $this -> productsArray = $arrayOfProducts;
+        return $this -> productsArray;
+    }
 
-        private $productsArray = [];
-        public function setProcuctArray($arrayOfProducts) : Array {
-            $this -> productsArray = $arrayOfProducts;
-            return $this -> productsArray;
-        }
+    public function getProcuctArray() : Array {
 
-       public function getProcuctArray() : Array {
+        return $this -> productsArray;
+    }
 
-           return $this -> productsArray;
-       }
+}
+?>
 
-   }
-   ?>
+<?php
+$product1 =  new Product(
+    "Handy","Iphone");
+$product1 -> setValue(100);
+//print_r($product1 -> testi());
+//print_r($product1 -> getArticleNbrValue());
 
-   <?php
-   $product1 =  new Product(
-       "Handy","Iphone");
-   print_r($product1 -> testi());
-   $product1 -> setValue(100);
-   print_r($product1 -> getArticleNbrValue());
+$product2 =  new Product(
+    "Handy","Samsung");
+$product2 -> setValue(101);
+//print_r($product2 -> testi());
+//print_r($product2 -> getArticleNbrValue());
 
-   $product2 =  new Product(
-       "Handy","Samsung");
-   print_r($product2 -> testi());
-   $product2 -> setValue(101);
-   print_r($product2 -> getArticleNbrValue());
+$product3 =  new Product(
+    "Handy","Xiomi");
+$product3 -> setValue(102);
+//print_r($product3 -> testi());
+//print_r($product3 -> getArticleNbrValue());
+////////////////////////////////////////////
 
-   $product3 =  new Product(
-       "Handy","Xiomi");
-   print_r($product3 -> testi());
-   $product3 -> setValue(102);
-   print_r($product3 -> getArticleNbrValue());
-   ////////////////////////////////////////////
+$productsArrayObject = new ProductsArray("test","test");
+$productsArrayObject -> setProcuctArray(array($product1,$product2,$product3));
+print_r($productsArrayObject -> getProcuctArray());
+?>
 
-   $productsArrayObject = new ProductsArray("test","test");
-   $productsArrayObject -> setProcuctArray(array($product1,$product2,$product3));
-   print_r($productsArrayObject -> getProcuctArray());
-   ?>
-
-   <p></p>
-   <p><a href="https://www.w3schools.com/php/php_oop_what_is.asp">W3 Tutorial PHP OOP</a></p>
-   </body>
+<p></p>
+<p><a href="https://www.w3schools.com/php/php_oop_what_is.asp">W3 Tutorial PHP OOP</a></p>
+</body>
 </html>

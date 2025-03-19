@@ -1,0 +1,10 @@
+Übung 
+Erstellen Sie ein Klasse, die private und öffentliche Methoden hat und wenden Sie 
+
+- die Vererbungsregeln an,
+- Ändern Sie die Eigenschaften,
+- Definieren Sie für die ChildClass neue Methoden.
+
+- Erstellen Sie eine Programmklasse und erstellen Instanzen.
+
+- Erzeugen Sie aus verschiedenen Klassen eine Klasse mit autoload.

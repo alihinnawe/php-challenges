@@ -6,15 +6,15 @@ class Admin {
     public $role = "Administrator";
 
     public function showRole() {
-        echo "Admin Role: $this->role\n";
+        echo "Role: $this->role\n";
     }
 
-    private function showAdminName() {
-        echo "Admin Name: $this->adminName\n";
-    }
+	private function showAdminName() {
+			echo "Admin Name: $this->adminName\n";
+		} 
 
     public function accessAdminName() {
-        $this->showAdminName();
+        return $this ->showAdminName();
     }
 }
 ?>

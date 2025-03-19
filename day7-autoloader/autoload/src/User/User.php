@@ -12,7 +12,7 @@ class User extends Admin {
     }
 
     public function showRole() {
-        echo "User Role: $this->role\n"; 
+        echo "Role: $this->role\n"; 
     }
 }
 ?>

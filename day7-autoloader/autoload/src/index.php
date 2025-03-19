@@ -11,11 +11,6 @@ $admin->accessAdminName();
 
 echo "\n";
 
-$role = new Role();
-$role->showRole();
-
-echo "\n";
-
 $user = new User();
 $user->showRole();
 $user->showUserName();

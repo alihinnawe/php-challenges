@@ -2,7 +2,6 @@
 require_once 'autoloader.php';
 
 use Admin\Admin;
-use Admin\Role;
 use User\User;
 
 $admin = new Admin();

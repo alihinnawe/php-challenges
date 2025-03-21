@@ -6,7 +6,8 @@ $repository = new GalleryImageRepository($pdo);
 $images = $repository->fetchAll();
 
 // Correct path to index.view.php
-$viewPath = __DIR__ . '/views/index.view.php';
+//$viewPath = __DIR__ . '/views/index.view.php';
+$viewPath = __DIR__ . '/views/layouts/main.view.php';
 
 if (!file_exists($viewPath)) {
     die("Error: View file not found at $viewPath");

@@ -1,0 +1,3 @@
+Bitte überlegen Sie sich ein Beispiel optional für
+einen FilterIterator oder
+ein SPLFileObject.

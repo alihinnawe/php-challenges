@@ -1,0 +1,1 @@
+Bitte recherchieren Sie die einzelnen Themen nochmal in PHP Manual und schreiben Sie für ein Beispiel eines Themas eine PHP - Datei, die in eine andere PHP - Datei inkludiert wird.

@@ -81,7 +81,31 @@ class TournamentServiceProxy extends Object {
 	 *			or if the HTTP response is not ok
 	 */
 	async insertOrUpdateEntity (entity) {
-
+		console.log("entity has:" + entity);
+		if (entity == null || entity.attributes == null) throw new RefferenceError();
+		if (entity.attributes["discriminator"] !== "Competitor" && entity.attributes["discriminator"] !== "Tournament" && entity.attributes["discriminator"] !== "TournamentType") throw new TypeError();
+		let path = "/services/";
+		
+		switch (entity.attributes["discriminator"]) {
+			default:
+				throw new Error();
+			case "Competitor":
+				path += "competitors";
+				break;
+			case "Tournament":
+				path += "tournaments";
+				break;
+			case "TournamentType":
+				path += "tournament-types";
+				break;
+		}
+	
+		const resource = this.#origin + path;
+		const headers = { "Accept": "text/plain", "Content-Type": "application/json" };
+		
+		const response = await basicFetch(resource, { method: "POST", headers: headers, body: JSON.stringify(entity), credentials: "include" });
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return window.parseInt(await response.text());
 	}
 
 
@@ -94,10 +118,32 @@ class TournamentServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async deleteEntity (entity) {
-		
+	async deleteEntity(entity) {
+		if (entity == null || entity.attributes == null || entity.identity == null) throw new ReferenceError();
+		const discriminator = entity.attributes["discriminator"];
+		let path = "/services/";
+		switch (discriminator) {
+			default:
+				throw new TypeError();
+			case "Competitor":
+				path += "competitors/" + entity.identity;
+				break;
+			case "Tournament":
+				path += "tournaments/" + entity.identity;
+				break;
+			case "TournamentType":
+				path += "tournament-types/" + entity.identity;
+				break;
+		}
+		const resource = this.#origin + path;
+		const response = await basicFetch(resource, {
+			method: "DELETE",
+			headers: { "Accept": "text/plain" },
+			credentials: "include"
+		});
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return window.parseInt(await response.text());
 	}
-
 
 	/**
 	 * Remotely invokes the web-service method with HTTP signature
@@ -189,7 +235,12 @@ class TournamentServiceProxy extends Object {
 	 *			or if the HTTP response is not ok
 	 */
 	async insertOrUpdateDocument (file) {
+		const resource = this.#origin + "/services/documents";
+		const headers = { "Accept": "text/plain", "Content-Type": file.type, "X-Content-Description": file.name };
 
+		const response = await basicFetch(resource, { method: "POST" , headers: headers, body: file, credentials: "include" });
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return window.parseInt(await response.text());
 	}
 
 
@@ -203,7 +254,12 @@ class TournamentServiceProxy extends Object {
 	 *			or if the HTTP response is not ok
 	 */
 	async deleteDocument (documentIdentity) {
-
+		// TODO
+		const resource = this.#origin + "/services/documents/" + documentIdentity;
+		const headers = { "Accept": "text/plain" };
+		const response = await basicFetch(resource, { method: "DELETE" , headers: headers, credentials: "include" });
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return window.parseInt(await response.text());
 	}
 
 
@@ -285,8 +341,24 @@ class TournamentServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async insertOrUpdateTournamentType (tournamentType) {
+	async insertOrUpdateTournamentType(tournamentType) {
+		if (tournamentType == null || typeof tournamentType !== "object") throw new ReferenceError();
 
+		const resource = this.#origin + "/services/tournament-types";
+		const headers = {
+			"Accept": "text/plain",
+			"Content-Type": "application/json"
+		};
+
+		const response = await basicFetch(resource, {
+			method: "POST",
+			headers: headers,
+			body: JSON.stringify(tournamentType),
+			credentials: "include"
+		});
+
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return window.parseInt(await response.text());
 	}
 
 
@@ -299,8 +371,25 @@ class TournamentServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async deleteTournamentType (tournamentTypeIdentity) {
+	async deleteTournamentType(tournamentTypeIdentity) {
+		if (tournamentTypeIdentity == null || typeof tournamentTypeIdentity !== "number") {
+			throw new TypeError("Expected a valid numeric tournament type identity.");
+		}
 
+		const path = "/services/tournament-types/" + tournamentTypeIdentity;
+		const resource = this.#origin + path;
+
+		const response = await basicFetch(resource, {
+			method: "DELETE",
+			headers: { "Accept": "text/plain" },
+			credentials: "include"
+		});
+
+		if (!response.ok) {
+			throw new Error("HTTP " + response.status + " " + response.statusText);
+		}
+
+		return window.parseInt(await response.text());
 	}
 
 
@@ -318,10 +407,24 @@ class TournamentServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async queryTournamentTypeTournaments (tournamentTypeIdentity, pagingOffset, pagingLimit) {
-
+	async queryTournamentTypeTournaments(tournamentTypeIdentity, pagingOffset, pagingLimit) {
+		const queryFactory = new URLSearchParams();
+		if (pagingOffset != null) queryFactory.set("paging-offset", pagingOffset);
+		if (pagingLimit != null) queryFactory.set("paging-limit", pagingLimit);
+		
+		const resource = this.#origin + "/services/tournament-types/" + tournamentTypeIdentity + "/tournaments" + 
+						(queryFactory.size === 0 ? "" : "?" + queryFactory.toString());
+		const headers = { "Accept": "application/json" };
+		
+		const response = await basicFetch(resource, {
+			method: "GET",
+			headers: headers,
+			credentials: "include"
+		});
+		
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return response.json();
 	}
-
 
 	/**
 	 * Remotely invokes the web-service method with HTTP signature
@@ -417,8 +520,29 @@ class TournamentServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async insertOrUpdateTournament (tournament) {
+	async insertOrUpdateTournament(tournament) {
+		if (tournament == null || typeof tournament !== "object") {
+			throw new ReferenceError("Invalid tournament object.");
+		}
 
+		const resource = this.#origin + "/services/tournaments";
+		const headers = {
+			"Accept": "text/plain",
+			"Content-Type": "application/json"
+		};
+
+		const response = await basicFetch(resource, {
+			method: "POST",
+			headers: headers,
+			body: JSON.stringify(tournament),
+			credentials: "include"
+		});
+
+		if (!response.ok) {
+			throw new Error("HTTP " + response.status + " " + response.statusText);
+		}
+
+		return window.parseInt(await response.text());
 	}
 
 
@@ -431,10 +555,26 @@ class TournamentServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async deleteTournament (tournamentIdentity) {
+	async deleteTournament(tournamentIdentity) {
+		if (tournamentIdentity == null || typeof tournamentIdentity !== "number") {
+			throw new TypeError("Expected a valid numeric tournament identity.");
+		}
 
+		const path = "/services/tournaments/" + tournamentIdentity;
+		const resource = this.#origin + path;
+
+		const response = await basicFetch(resource, {
+			method: "DELETE",
+			headers: { "Accept": "text/plain" },
+			credentials: "include"
+		});
+
+		if (!response.ok) {
+			throw new Error("HTTP " + response.status + " " + response.statusText);
+		}
+
+		return window.parseInt(await response.text());
 	}
-
 
 	/**
 	 * Remotely invokes the web-service method with HTTP signature
@@ -509,8 +649,31 @@ class TournamentServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async insertTournamentMatch (match) {
-
+	async insertTournamentMatch(match) {
+		const resource = this.#origin + "/services/tournaments/" + match.tournamentIdentity + "/matches";
+		const headers = {
+			"Accept": "text/plain",
+			"Content-Type": "application/x-www-form-urlencoded"
+		};
+		
+		const queryFactory = new URLSearchParams();
+		if (match.groupReference != null) queryFactory.set("group-reference", match.groupReference);
+		if (match.leftParentReference != null) queryFactory.set("left-parent-reference", match.leftParentReference);
+		if (match.leftParentRank != null) queryFactory.set("left-parent-rank", match.leftParentRank);
+		if (match.leftScore != null) queryFactory.set("left-score", match.leftScore);
+		if (match.rightParentReference != null) queryFactory.set("right-parent-reference", match.rightParentReference);
+		if (match.rightParentRank != null) queryFactory.set("right-parent-rank", match.rightParentRank);
+		if (match.rightScore != null) queryFactory.set("right-score", match.rightScore);
+		
+		const response = await basicFetch(resource, {
+			method: "POST",
+			headers: headers,
+			body: queryFactory,
+			credentials: "include"
+		});
+		
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return response.text();
 	}
 
 
@@ -523,10 +686,27 @@ class TournamentServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async updateTournamentMatch (match) {
-
+	async updateTournamentMatch(match) {
+		const resource = this.#origin + "/services/tournaments/" + match.tournamentIdentity + "/matches/" + match.matchIdentity;
+		const headers = {
+			"Accept": "text/plain",
+			"Content-Type": "application/x-www-form-urlencoded"
+		};
+		
+		const queryFactory = new URLSearchParams();
+		if (match.leftScore != null) queryFactory.set("left-score", match.leftScore);
+		if (match.rightScore != null) queryFactory.set("right-score", match.rightScore);
+		
+		const response = await basicFetch(resource, {
+			method: "PATCH",
+			headers: headers,
+			body: queryFactory,
+			credentials: "include"
+		});
+		
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return response.text();
 	}
-
 
 	/**
 	 * Remotely invokes the web-service method with HTTP signature
@@ -537,8 +717,18 @@ class TournamentServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async deleteTournamentMatch (match) {
-
+	async deleteTournamentMatch(match) {
+		const resource = this.#origin + "/services/tournaments/" + match.tournamentIdentity + "/matches/" + match.matchIdentity;
+		const headers = { "Accept": "text/plain" };
+		
+		const response = await basicFetch(resource, {
+			method: "DELETE",
+			headers: headers,
+			credentials: "include"
+		});
+		
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return response.text();
 	}
 
 
@@ -616,8 +806,22 @@ class TournamentServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async insertOrUpdateCompetitor (competitor) {
-		// TODO
+	async insertOrUpdateCompetitor(competitor) {
+		const resource = this.#origin + "/services/competitors";
+		const headers = {
+			"Accept": "text/plain",
+			"Content-Type": "application/json"
+		};
+		
+		const response = await basicFetch(resource, {
+			method: "POST",
+			headers: headers,
+			body: JSON.stringify(competitor),
+			credentials: "include"
+		});
+		
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return response.text();
 	}
 
 
@@ -630,22 +834,42 @@ class TournamentServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async deleteCompetitor (competitorIdentity) {
-		// TODO
+	async deleteCompetitor(competitorIdentity) {
+		const resource = this.#origin + "/services/competitors/" + competitorIdentity;
+		const headers = { "Accept": "text/plain" };
+		
+		const response = await basicFetch(resource, {
+			method: "DELETE",
+			headers: headers,
+			credentials: "include"
+		});
+		
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return response.text();
 	}
-
 
 	/**
 	 * Remotely invokes the web-service method with HTTP signature
-	 * DELETE /services/tokens - text/plain, and returns a promise
-	 * for the number of deleted deactivated tokens.
-	 * @return a promise for the number of deleted deactivated tokens
-	 * @param tokenAlias the token alias, or null for none
+	 * PATCH /services/tokens text/plain text/plain, and returns a promise
+	 * for an array of generated token aliases.
+	 * @param tokenCount the token count, or zero for none
+	 * @param tokenAlias the optional token alias for authentication, or null for none
+	 * @return a promise for an array of generated token aliases, empty for none
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async deleteDeactivatedTokens (tokenAlias = null) {
-		// TODO
+	async insertTokens (tokenCount = 0, tokenAlias = null) {
+		if (tokenCount == null) throw new ReferenceError();
+		if (typeof tokenCount !== "number" || (tokenAlias != null && typeof tokenAlias !== "string")) throw new TypeError();
+		if (tokenCount < 0 || tokenCount > 1000 || (tokenAlias != null && tokenAlias.length !== 16)) throw new RangeError();
+
+		const resource = this.#origin + "/services/tokens";
+		const headers = { "Accept": "text/plain", "Content-Type": "text/plain" };
+
+		const response = await basicFetch(resource, { method: "PATCH" , headers: headers, body: tokenCount.toString(), credentials: "include" }, tokenAlias == null ? null : "token", tokenAlias);
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		const tokenAliases = (await response.text()).trim();
+		return tokenAliases.length === 0 ? [] : tokenAliases.split(/\r?\n/g);
 	}
 }
 

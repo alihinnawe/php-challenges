@@ -90,6 +90,9 @@ class CookbookServiceProxy extends Object {
 	 * @return either the matching document, or it's binary content
 	 */
 	async findDocument (documentIdentity, metadata = true) {
+		if (documentIdentity == null || metadata == null) throw new ReferenceError();
+		if (typeof documentIdentity !== "number" || typeof metadata !== "boolean") throw new TypeError();
+
 		const resource = this.#origin + "/services/documents/" + documentIdentity;
 		const headers = { "Accept": metadata ? "application/json" : "*/*" };
 
@@ -109,6 +112,9 @@ class CookbookServiceProxy extends Object {
 	 *			or if the HTTP response is not ok
 	 */
 	async insertOrUpdateDocument (file) {
+		if (file == null) throw new ReferenceError();
+		if (typeof file !== "object" || !(file instanceof File)) throw new TypeError();
+
 		const resource = this.#origin + "/services/documents";
 		const headers = { "Accept": "text/plain", "Content-Type": file.type, "X-Content-Description": file.name };
 
@@ -128,9 +134,9 @@ class CookbookServiceProxy extends Object {
 	 *			or if the HTTP response is not ok
 	 */
 	async deleteDocument (documentIdentity) {
-		// TODO
 		const resource = this.#origin + "/services/documents/" + documentIdentity;
 		const headers = { "Accept": "text/plain" };
+		
 		const response = await basicFetch(resource, { method: "DELETE" , headers: headers, credentials: "include" });
 		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
 		return window.parseInt(await response.text());
@@ -161,7 +167,6 @@ class CookbookServiceProxy extends Object {
 	 *			or if the HTTP response is not ok
 	 */
 	async queryPeople (pagingOffset, pagingLimit, minCreated, maxCreated, minModified, maxModified, email, group, title, surname, forename, street, city, country, postcode) {
-		// TODO
 		const queryFactory = new URLSearchParams();
 		if (pagingOffset != null) queryFactory.set("paging-offset", pagingOffset);
 		if (pagingLimit != null) queryFactory.set("paging-limit", pagingLimit);
@@ -199,6 +204,9 @@ class CookbookServiceProxy extends Object {
 	 *			or if the HTTP response is not ok
 	 */
 	async findRequester (email, password) {
+		if (email == null || password == null) throw new ReferenceError();
+		if (typeof email !== "string" || typeof password !== "string") throw new TypeError();
+
 		const resource = this.#origin + "/services/people/requester";
 		const headers = { "Accept": "application/json" };
 
@@ -218,7 +226,9 @@ class CookbookServiceProxy extends Object {
 	 *			or if the HTTP response is not ok
 	 */
 	async findPerson (personIdentity) {
-		// TODO
+		if (personIdentity == null) throw new ReferenceError();
+		if (typeof personIdentity !== "number") throw new TypeError();
+
 		const resource = this.#origin + "/services/people/" + personIdentity;
 		const headers = { "Accept": "application/json" };
 
@@ -239,6 +249,9 @@ class CookbookServiceProxy extends Object {
 	 *			or if the HTTP response is not ok
 	 */
 	async insertOrUpdatePerson (person, password = null) {
+		if (person == null) throw new ReferenceError();
+		if (typeof person !== "object" || (password != null && typeof password !== "string")) throw new TypeError();
+
 		const resource = this.#origin + "/services/people";
 		const headers = { "Accept": "text/plain", "Content-Type": "application/json" };
 		if (password != null) headers["X-Set-Password"] = password;
@@ -259,6 +272,9 @@ class CookbookServiceProxy extends Object {
 	 *			or if the HTTP response is not ok
 	 */
 	async deletePerson (personIdentity) {
+		if (personIdentity == null) throw new ReferenceError();
+		if (typeof personIdentity !== "number") throw new TypeError();
+
 		const resource = this.#origin + "/services/people/" + personIdentity;
 		const headers = { "Accept": "text/plain" };
 
@@ -281,6 +297,9 @@ class CookbookServiceProxy extends Object {
 	 *			or if the HTTP response is not ok
 	 */
 	async queryEditableVictuals (person, pagingOffset, pagingLimit) {
+		if (person == null) throw new ReferenceError();
+		if (typeof person !== "object") throw new TypeError();
+
 		const queryFactory = new URLSearchParams();
 		if (pagingOffset != null) queryFactory.set("paging-offset", pagingOffset);
 		if (pagingLimit != null) queryFactory.set("paging-limit", pagingLimit);
@@ -308,7 +327,6 @@ class CookbookServiceProxy extends Object {
 	 *			or if the HTTP response is not ok
 	 */
 	async queryEditableRecipes (person, pagingOffset, pagingLimit) {
-		// TODO
 		const queryFactory = new URLSearchParams();
 		if (pagingOffset != null) queryFactory.set("paging-offset", pagingOffset);
 		if (pagingLimit != null) queryFactory.set("paging-limit", pagingLimit);
@@ -342,7 +360,6 @@ class CookbookServiceProxy extends Object {
 	 *			or if the HTTP response is not ok
 	 */
 	 async queryVictuals (pagingOffset, pagingLimit, minCreated, maxCreated, minModified, maxModified, alias, description, authored, diets = []) {
-		// TODO#
 		const queryFactory = new URLSearchParams();
 		for (const diet of diets) queryFactory.append("diet", diet); 
 		if (pagingOffset != null) queryFactory.set("paging-offset", pagingOffset);
@@ -373,7 +390,6 @@ class CookbookServiceProxy extends Object {
 	 *			or if the HTTP response is not ok
 	 */
 	async findVictual (victualIdentity) {
-		// TODO
 		const resource = this.#origin + "/services/victuals" + victualIdentity;
 		const headers = { "Accept": "application/json" };
 		const response = await basicFetch(resource, { method: "GET" , headers: headers, credentials: "include" }, email, password);
@@ -459,7 +475,6 @@ async insertOrUpdateVictual(victual) {
 	 *			or if the HTTP response is not ok
 	 */
 	async queryRecipes (pagingOffset, pagingLimit, minCreated, maxCreated, minModified, maxModified, category, title, description, instruction, minIngredientCount, maxIngredientCount, minIllustrationCount, maxIllustrationCount, authored, diets = []) {
-		// TODO
 		const queryFactory = new URLSearchParams();
 		for (const diet of diets) queryFactory.append("diet", diet); 
 		if (pagingOffset != null) queryFactory.set("paging-offset", pagingOffset);
@@ -497,7 +512,6 @@ async insertOrUpdateVictual(victual) {
 	 *			or if the HTTP response is not ok
 	 */
 	async findRecipe (recipeIdentity) {
-		// TODO
 		const resource = this.#origin + "/services/recipes/" + recipeIdentity;
 		const headers = { "Accept": "application/json" };
 
@@ -517,7 +531,6 @@ async insertOrUpdateVictual(victual) {
 	 *			or if the HTTP response is not ok
 	 */
 	async insertOrUpdateRecipe (recipe) {
-		// TODO
 		const resource = this.#origin + "/services/recipes";
 		const headers = { "Accept": "text/plain", "Content-Type": "application/json" };
 		const response = await fetch(resource, { method: "POST" , headers: headers, body: JSON.stringify(recipe), credentials: "include" });
@@ -536,9 +549,9 @@ async insertOrUpdateVictual(victual) {
 	 *			or if the HTTP response is not ok
 	 */
 	async deleteRecipe (recipeIdentity) {
-		// TODO
 		const resource = this.#origin + "/services/recipes/" + recipeIdentity;
 		const headers = { "Accept": "text/plain" };
+		
 		const response = await fetch(resource, { method: "DELETE" , headers: headers, credentials: "include" });
 		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
 		return window.parseInt(await response.text());
@@ -557,7 +570,6 @@ async insertOrUpdateVictual(victual) {
 	 *			or if the HTTP response is not ok
 	 */
 	async queryRecipeIngredients (recipeIdentity, pagingOffset, pagingLimit) {
-		// TODO
 		const queryFactory = new URLSearchParams();
 		if (pagingOffset != null) queryFactory.set("paging-offset", pagingOffset);
 		if (pagingLimit != null) queryFactory.set("paging-limit", pagingLimit);
@@ -582,7 +594,6 @@ async insertOrUpdateVictual(victual) {
 	 *			or if the HTTP response is not ok
 	 */
 	async insertOrUpdateIngredient (recipeIdentity, ingredient) {
-		// TODO
 		const resource = this.#origin + "/services/recipes/" + recipeIdentity + "/ingredients";
 		const headers = { 
 			"Content-Type": "application/json",
@@ -611,9 +622,9 @@ async insertOrUpdateVictual(victual) {
 	 *			or if the HTTP response is not ok
 	 */
 	async deleteIngredient (recipeIdentity, ingredientIdentity) {
-		// TODO
 		const resource = this.#origin + "/services/recipes/" + recipeIdentity + "/ingredients/" + ingredientIdentity;
 		const headers = { "Accept": "text/plain" };
+		
 		const response = await fetch(resource, { method: "DELETE" , headers: headers, credentials: "include" });
 		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
 		return window.parseInt(await response.text());
@@ -632,7 +643,6 @@ async insertOrUpdateVictual(victual) {
 	 *			or if the HTTP response is not ok
 	 */
 	async queryRecipeIllustrations (recipeIdentity, pagingOffset, pagingLimit) {
-		// TODO
 		const queryFactory = new URLSearchParams();
 		if (pagingOffset != null) queryFactory.set("paging-offset", pagingOffset);
 		if (pagingLimit != null) queryFactory.set("paging-limit", pagingLimit);
@@ -688,9 +698,9 @@ async insertOrUpdateVictual(victual) {
 	 *			or if the HTTP response is not ok
 	 */
 	async removeRecipeIllustration (recipeIdentity, documentIdentity) {
-		// TODO
 		const resource = this.#origin + "/services/recipes/" + recipeIdentity + "/illustrations/" + documentIdentity;
 		const headers = { "Accept": "text/plain" };
+		
 		const response = await fetch(resource, { method: "DELETE" , headers: headers, credentials: "include" });
 		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
 		return window.parseInt(await response.text());

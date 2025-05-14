@@ -106,7 +106,10 @@ class ObservationEditorTabPaneController extends TabPaneController {
 	async processAddInfluencer () {
 		if (this.#selectedPersonIndex === -1) return;
 		try {
-			// TODO
+			const selectedPerson = this.#people[this.#selectedPersonIndex];
+			this.sessionOwnerInfluencers.push(selectedPerson);
+			this.#selectedInfluencerIndex = this.sessionOwnerInfluencers.length - 1;
+			this.#refreshInfluencers();
 
 			this.messageOutput.value = "ok.";
 		} catch (error) {
@@ -123,7 +126,10 @@ class ObservationEditorTabPaneController extends TabPaneController {
 		if (this.#selectedInfluencerIndex === -1) return;
 		try {
 			// TODO
+			this.sessionOwnerInfluencers = this.sessionOwnerInfluencers.filter((influencer, index) => index !== this.#selectedInfluencerIndex);
 
+			this.#refreshInfluencers();
+			
 			this.messageOutput.value = "ok.";
 		} catch (error) {
 			this.messageOutput.value = error.message || error.toString();

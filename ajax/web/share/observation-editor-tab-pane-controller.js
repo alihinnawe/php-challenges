@@ -77,6 +77,7 @@ class ObservationEditorTabPaneController extends TabPaneController {
 	 */
 	async processActivated () {
 		try {
+		
 			// redefine center content
 			while (this.center.lastElementChild) this.center.lastElementChild.remove();
 			const peopleViewerSectionTemplate = await this.queryTemplate("people-viewer");
@@ -92,6 +93,12 @@ class ObservationEditorTabPaneController extends TabPaneController {
 			this.influencerViewerSelectorButton.addEventListener("click", event => this.processRemoveInfluencer());
 			this.observationQueryButton.addEventListener("click", event => this.processQueryPotentialInfluencers());
 
+
+			this.#focusedFollowerIndex = this.sessionOwnerFollowers.length > 0 ? 0 : -1;
+			this.#selectedInfluencerIndex = this.sessionOwnerInfluencers.length > 0 ? 0 : -1;
+			this.#refreshFollowers();
+			this.#refreshInfluencers();
+
 			this.messageOutput.value = "";
 		} catch (error) {
 			this.messageOutput.value = error.message || error.toString();
@@ -105,8 +112,22 @@ class ObservationEditorTabPaneController extends TabPaneController {
 	 */
 	async processAddInfluencer () {
 		if (this.#selectedPersonIndex === -1) return;
+
 		try {
 			const selectedPerson = this.#people[this.#selectedPersonIndex];
+
+			// Prevent duplicates
+			const alreadyAdded = this.sessionOwnerInfluencers.find(influencer =>
+				influencer.identity === selectedPerson.identity
+			);
+			if (alreadyAdded) {
+				this.messageOutput.value = "already added.";
+				return;
+			}
+
+			// Add the influencer via the web service
+			await IRIS_SERVICE.addRequesterInfluencer(selectedPerson.identity);
+
 			this.sessionOwnerInfluencers.push(selectedPerson);
 			this.#selectedInfluencerIndex = this.sessionOwnerInfluencers.length - 1;
 			this.#refreshInfluencers();

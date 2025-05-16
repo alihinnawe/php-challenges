@@ -58,8 +58,27 @@ class RadioServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
+	
 	async queryDocuments (pagingOffset, pagingLimit, minCreated, maxCreated, minModified, maxModified, hash, typeFragment, descriptionFragment, minSize, maxSize) {
-		// TODO
+		const queryFactory = new URLSearchParams();
+		if (pagingOffset != null) queryFactory.set("paging-offset", pagingOffset);
+		if (pagingLimit != null) queryFactory.set("paging-limit", pagingLimit);
+		if (minCreated != null) queryFactory.set("min-created", minCreated);
+		if (maxCreated != null) queryFactory.set("max-created", maxCreated);
+		if (minModified != null) queryFactory.set("min-modified", minModified);
+		if (maxModified != null) queryFactory.set("max-modified", maxModified);
+		if (hash != null) queryFactory.set("hash", hash);
+		if (typeFragment != null) queryFactory.set("type-fragment", typeFragment);
+		if (descriptionFragment != null) queryFactory.set("description-fragment", descriptionFragment);
+		if (minSize != null) queryFactory.set("min-size", minSize);
+		if (maxSize != null) queryFactory.set("max-size", maxSize);
+
+		const resource = this.#origin + "/services/dcouments" + (queryFactory.size === 0 ? "" : "?" + queryFactory.toString());
+		const headers = { "Accept": "application/json" };
+
+		const response = await basicFetch(resource, { method: "GET" , headers: headers, credentials: "include" });
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return /* await */ response.json();
 	}
 
 
@@ -71,8 +90,17 @@ class RadioServiceProxy extends Object {
 	 * @param metadata true for document metadata, false for document content
 	 * @return either the matching document, or it's binary content
 	 */
+	
 	async findDocument (documentIdentity, metadata = true) {
-		// TODO
+		if (documentIdentity == null || metadata == null) throw new ReferenceError();
+		if (typeof documentIdentity !== "number" || typeof metadata !== "boolean") throw new TypeError();
+
+		const resource = this.#origin + "/services/documents/" + documentIdentity;
+		const headers = { "Accept": metadata ? "application/json" : "*/*" };
+
+		const response = await basicFetch(resource, { method: "GET" , headers: headers, credentials: "include" });
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return await (metadata ? response.json() : response.arrayBuffer());
 	}
 
 
@@ -85,8 +113,17 @@ class RadioServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
+	
 	async insertOrUpdateDocument (file) {
-		// TODO
+		if (file == null) throw new ReferenceError();
+		if (typeof file !== "object" || !(file instanceof File)) throw new TypeError();
+
+		const resource = this.#origin + "/services/documents";
+		const headers = { "Accept": "text/plain", "Content-Type": file.type, "X-Content-Description": file.name };
+
+		const response = await basicFetch(resource, { method: "POST" , headers: headers, body: file, credentials: "include" });
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return window.parseInt(await response.text());
 	}
 
 
@@ -99,8 +136,14 @@ class RadioServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
+	
 	async deleteDocument (documentIdentity) {
-		// TODO
+		const resource = this.#origin + "/services/documents/" + documentIdentity;
+		const headers = { "Accept": "text/plain" };
+		
+		const response = await basicFetch(resource, { method: "DELETE" , headers: headers, credentials: "include" });
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return window.parseInt(await response.text());
 	}
 
 
@@ -127,8 +170,31 @@ class RadioServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
+	
 	async queryPeople (pagingOffset, pagingLimit, minCreated, maxCreated, minModified, maxModified, email, group, title, surname, forename, street, city, country, postcode) {
-		// TODO
+		const queryFactory = new URLSearchParams();
+		if (pagingOffset != null) queryFactory.set("paging-offset", pagingOffset);
+		if (pagingLimit != null) queryFactory.set("paging-limit", pagingLimit);
+		if (minCreated != null) queryFactory.set("min-created", minCreated);
+		if (maxCreated != null) queryFactory.set("max-created", maxCreated);
+		if (minModified != null) queryFactory.set("min-modified", minModified);
+		if (maxModified != null) queryFactory.set("max-modified", maxModified);
+		if (email != null) queryFactory.set("email", email);
+		if (group != null) queryFactory.set("group", group);
+		if (title != null) queryFactory.set("title", title);
+		if (surname != null) queryFactory.set("surname", surname);
+		if (forename != null) queryFactory.set("forename", forename);
+		if (street != null) queryFactory.set("street", street);
+		if (city != null) queryFactory.set("city", city);
+		if (country != null) queryFactory.set("country", country);
+		if (postcode != null) queryFactory.set("postcode", postcode);
+
+		const resource = this.#origin + "/services/people" + (queryFactory.size === 0 ? "" : "?" + queryFactory.toString());
+		const headers = { "Accept": "application/json" };
+
+		const response = await basicFetch(resource, { method: "GET" , headers: headers, credentials: "include" });
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return /* await */ response.json();
 	}
 
 
@@ -142,8 +208,17 @@ class RadioServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
+	
 	async findRequester (email, password) {
-		// TODO
+		if (email == null || password == null) throw new ReferenceError();
+		if (typeof email !== "string" || typeof password !== "string") throw new TypeError();
+
+		const resource = this.#origin + "/services/people/requester";
+		const headers = { "Accept": "application/json" };
+
+		const response = await basicFetch(resource, { method: "GET" , headers: headers, credentials: "include" }, email, password);
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return /* await */ response.json();
 	}
 
 
@@ -156,8 +231,17 @@ class RadioServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
+	
 	async findPerson (personIdentity) {
-		// TODO
+		if (personIdentity == null) throw new ReferenceError();
+		if (typeof personIdentity !== "number") throw new TypeError();
+
+		const resource = this.#origin + "/services/people/" + personIdentity;
+		const headers = { "Accept": "application/json" };
+
+		const response = await basicFetch(resource, { method: "GET" , headers: headers, credentials: "include" }, email, password);
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return /* await */ response.json();
 	}
 
 
@@ -171,8 +255,18 @@ class RadioServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
+	
 	async insertOrUpdatePerson (person, password = null) {
-		// TODO
+		if (person == null) throw new ReferenceError();
+		if (typeof person !== "object" || (password != null && typeof password !== "string")) throw new TypeError();
+
+		const resource = this.#origin + "/services/people";
+		const headers = { "Accept": "text/plain", "Content-Type": "application/json" };
+		if (password != null) headers["X-Set-Password"] = password;
+
+		const response = await basicFetch(resource, { method: "POST" , headers: headers, body: JSON.stringify(person), credentials: "include" });
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return window.parseInt(await response.text());
 	}
 
 
@@ -185,8 +279,17 @@ class RadioServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
+	
 	async deletePerson (personIdentity) {
-		// TODO
+		if (personIdentity == null) throw new ReferenceError();
+		if (typeof personIdentity !== "number") throw new TypeError();
+
+		const resource = this.#origin + "/services/people/" + personIdentity;
+		const headers = { "Accept": "text/plain" };
+
+		const response = await basicFetch(resource, { method: "DELETE" , headers: headers, credentials: "include" });
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return window.parseInt(await response.text());
 	}
 
 
@@ -211,9 +314,30 @@ class RadioServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async queryAlbums (pagingOffset, pagingLimit, minCreated, maxCreated, minModified, maxModified, titleFragment, minReleaseYear, maxReleaseYear, minTrackTotal, maxTrackTotal, minTrackCount, maxTrackCount) {
-		// TODO
+	async queryAlbums(pagingOffset, pagingLimit, minCreated, maxCreated, minModified, maxModified, titleFragment, minReleaseYear, maxReleaseYear, minTrackTotal, maxTrackTotal, minTrackCount, maxTrackCount) {
+		const queryFactory = new URLSearchParams();
+		if (pagingOffset != null) queryFactory.set("paging-offset", pagingOffset);
+		if (pagingLimit != null) queryFactory.set("paging-limit", pagingLimit);
+		if (minCreated != null) queryFactory.set("min-created", minCreated);
+		if (maxCreated != null) queryFactory.set("max-created", maxCreated);
+		if (minModified != null) queryFactory.set("min-modified", minModified);
+		if (maxModified != null) queryFactory.set("max-modified", maxModified);
+		if (titleFragment != null) queryFactory.set("title-fragment", titleFragment);
+		if (minReleaseYear != null) queryFactory.set("min-release-year", minReleaseYear);
+		if (maxReleaseYear != null) queryFactory.set("max-release-year", maxReleaseYear);
+		if (minTrackTotal != null) queryFactory.set("min-track-total", minTrackTotal);
+		if (maxTrackTotal != null) queryFactory.set("max-track-total", maxTrackTotal);
+		if (minTrackCount != null) queryFactory.set("min-track-count", minTrackCount);
+		if (maxTrackCount != null) queryFactory.set("max-track-count", maxTrackCount);
+
+		const resource = this.#origin + "/services/albums" + (queryFactory.size === 0 ? "" : "?" + queryFactory.toString());
+		const headers = { "Accept": "application/json" };
+
+		const response = await basicFetch(resource, { method: "GET", headers: headers, credentials: "include" });
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return await response.json();
 	}
+
 
 
 	/**
@@ -225,8 +349,16 @@ class RadioServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async findAlbum (albumIdentity) {
-		// TODO
+	async findAlbum(albumIdentity) {
+		if (albumIdentity == null) throw new ReferenceError();
+		if (typeof albumIdentity !== "number") throw new TypeError();
+
+		const resource = this.#origin + "/services/albums/" + albumIdentity;
+		const headers = { "Accept": "application/json" };
+
+		const response = await basicFetch(resource, { method: "GET", headers: headers, credentials: "include" });
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return await response.json();
 	}
 
 
@@ -239,8 +371,25 @@ class RadioServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async insertOrUpdateAlbum (album) {
-		// TODO
+	async insertOrUpdateAlbum(album) {
+		if (album == null) throw new ReferenceError();
+		if (typeof album !== "object") throw new TypeError();
+
+		const resource = this.#origin + "/services/albums";
+		const headers = {
+			"Content-Type": "application/json",
+			"Accept": "text/plain"
+		};
+
+		const response = await basicFetch(resource, {
+			method: "POST",
+			headers: headers,
+			body: JSON.stringify(album),
+			credentials: "include"
+		});
+
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return window.parseInt(await response.text());
 	}
 
 
@@ -253,9 +402,23 @@ class RadioServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async deleteAlbum (albumIdentity) {
-		// TODO
+	async deleteAlbum(albumIdentity) {
+		if (albumIdentity == null) throw new ReferenceError();
+		if (typeof albumIdentity !== "number") throw new TypeError();
+
+		const resource = this.#origin + "/services/albums/" + albumIdentity;
+		const headers = { "Accept": "text/plain" };
+
+		const response = await basicFetch(resource, {
+			method: "DELETE",
+			headers: headers,
+			credentials: "include"
+		});
+
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return window.parseInt(await response.text());
 	}
+
 
 
 	/**
@@ -269,10 +432,27 @@ class RadioServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async queryAlbumTracks (albumIdentity, pagingOffset, pagingLimit) {
-		// TODO
-	}
+	async queryAlbumTracks(albumIdentity, pagingOffset, pagingLimit) {
+		if (albumIdentity == null) throw new ReferenceError();
+		if (typeof albumIdentity !== "number") throw new TypeError();
 
+		const queryFactory = new URLSearchParams();
+		if (pagingOffset != null) queryFactory.set("paging-offset", pagingOffset);
+		if (pagingLimit != null) queryFactory.set("paging-limit", pagingLimit);
+
+		const resource = this.#origin + "/services/albums/" + albumIdentity + "/tracks" +
+			(queryFactory.size === 0 ? "" : "?" + queryFactory.toString());
+		const headers = { "Accept": "application/json" };
+
+		const response = await basicFetch(resource, {
+			method: "GET",
+			headers: headers,
+			credentials: "include"
+		});
+
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return await response.json();
+	}
 
 	/**
 	 * Remotely invokes the web-service method with HTTP signature
@@ -294,10 +474,33 @@ class RadioServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async queryTracks (pagingOffset, pagingLimit, minCreated, maxCreated, minModified, maxModified, minOrdinal, maxOrdinal, artists = [], titles = [], genres = [], recorded) {
-		// TODO
-	}
+	async queryTracks(pagingOffset, pagingLimit, minCreated, maxCreated, minModified, maxModified, minOrdinal, maxOrdinal, artists = [], titles = [], genres = [], recorded) {
+		const queryFactory = new URLSearchParams();
+		if (pagingOffset != null) queryFactory.set("paging-offset", pagingOffset);
+		if (pagingLimit != null) queryFactory.set("paging-limit", pagingLimit);
+		if (minCreated != null) queryFactory.set("min-created", minCreated);
+		if (maxCreated != null) queryFactory.set("max-created", maxCreated);
+		if (minModified != null) queryFactory.set("min-modified", minModified);
+		if (maxModified != null) queryFactory.set("max-modified", maxModified);
+		if (minOrdinal != null) queryFactory.set("min-ordinal", minOrdinal);
+		if (maxOrdinal != null) queryFactory.set("max-ordinal", maxOrdinal);
+		for (const artist of artists) queryFactory.append("artist", artist);
+		for (const title of titles) queryFactory.append("title", title);
+		for (const genre of genres) queryFactory.append("genre", genre);
+		if (recorded != null) queryFactory.set("recorded", recorded);
 
+		const resource = this.#origin + "/services/tracks" + (queryFactory.size === 0 ? "" : "?" + queryFactory.toString());
+		const headers = { "Accept": "application/json" };
+
+		const response = await basicFetch(resource, {
+			method: "GET",
+			headers: headers,
+			credentials: "include"
+		});
+
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return await response.json();
+	}
 
 	/**
 	 * Remotely invokes the web-service method with HTTP signature
@@ -308,8 +511,21 @@ class RadioServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async findTrack (trackIdentity) {
-		// TODO
+	async findTrack(trackIdentity) {
+		if (trackIdentity == null) throw new ReferenceError();
+		if (typeof trackIdentity !== "number") throw new TypeError();
+
+		const resource = this.#origin + "/services/tracks/" + trackIdentity;
+		const headers = { "Accept": "application/json" };
+
+		const response = await basicFetch(resource, {
+			method: "GET",
+			headers: headers,
+			credentials: "include"
+		});
+
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return await response.json();
 	}
 
 
@@ -323,8 +539,27 @@ class RadioServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async insertOrUpdateTrack (albumIdentity, track) {
-		// TODO
+	async insertOrUpdateTrack(albumIdentity, track) {
+		if (albumIdentity == null) throw new ReferenceError();
+		if (typeof albumIdentity !== "number") throw new TypeError();
+		if (track == null) throw new ReferenceError();
+		if (typeof track !== "object") throw new TypeError();
+
+		const resource = this.#origin + "/services/albums/" + albumIdentity + "/tracks";
+		const headers = {
+			"Content-Type": "application/json",
+			"Accept": "text/plain"
+		};
+
+		const response = await basicFetch(resource, {
+			method: "POST",
+			headers: headers,
+			body: JSON.stringify(track),
+			credentials: "include"
+		});
+
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return window.parseInt(await response.text());
 	}
 
 
@@ -337,8 +572,27 @@ class RadioServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async updateTrackLyrics (track) {
-		// TODO
+	async updateTrackLyrics(track) {
+		if (track == null) throw new ReferenceError();
+		if (typeof track !== "object" || typeof track.identity !== "number" || typeof track.lyrics !== "string") {
+			throw new TypeError();
+		}
+
+		const resource = this.#origin + "/services/tracks/" + track.identity + "/lyrics";
+		const headers = {
+			"Content-Type": "text/plain",
+			"Accept": "text/plain"
+		};
+
+		const response = await basicFetch(resource, {
+			method: "PUT",
+			headers: headers,
+			body: track.lyrics,
+			credentials: "include"
+		});
+
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return window.parseInt(await response.text());
 	}
 
 
@@ -351,9 +605,23 @@ class RadioServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async deleteTrack (trackIdentity) {
-		// TODO
+	async deleteTrack(trackIdentity) {
+		if (trackIdentity == null) throw new ReferenceError();
+		if (typeof trackIdentity !== "number") throw new TypeError();
+
+		const resource = this.#origin + "/services/tracks/" + trackIdentity;
+		const headers = { "Accept": "text/plain" };
+
+		const response = await basicFetch(resource, {
+			method: "DELETE",
+			headers: headers,
+			credentials: "include"
+		});
+
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return window.parseInt(await response.text());
 	}
+
 
 
 	/**
@@ -366,9 +634,24 @@ class RadioServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async queryTrackArtists (pagingOffset, pagingLimit) {
-		// TODO
+	async queryTrackArtists(pagingOffset, pagingLimit) {
+		const queryFactory = new URLSearchParams();
+		if (pagingOffset != null) queryFactory.set("paging-offset", pagingOffset);
+		if (pagingLimit != null) queryFactory.set("paging-limit", pagingLimit);
+
+		const resource = this.#origin + "/services/tracks/artists" + (queryFactory.size === 0 ? "" : "?" + queryFactory.toString());
+		const headers = { "Accept": "application/json" };
+
+		const response = await basicFetch(resource, {
+			method: "GET",
+			headers: headers,
+			credentials: "include"
+		});
+
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return await response.json();
 	}
+
 
 
 	/**
@@ -381,9 +664,24 @@ class RadioServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async queryTrackGenres (pagingOffset, pagingLimit) {
-		// TODO
+	async queryTrackGenres(pagingOffset, pagingLimit) {
+		const queryFactory = new URLSearchParams();
+		if (pagingOffset != null) queryFactory.set("paging-offset", pagingOffset);
+		if (pagingLimit != null) queryFactory.set("paging-limit", pagingLimit);
+
+		const resource = this.#origin + "/services/tracks/genres" + (queryFactory.size === 0 ? "" : "?" + queryFactory.toString());
+		const headers = { "Accept": "application/json" };
+
+		const response = await basicFetch(resource, {
+			method: "GET",
+			headers: headers,
+			credentials: "include"
+		});
+
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return await response.json();
 	}
+
 
 
 	/**
@@ -396,9 +694,24 @@ class RadioServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async queryTrackTitles (pagingOffset, pagingLimit) {
-		// TODO
+	async queryTrackTitles(pagingOffset, pagingLimit) {
+		const queryFactory = new URLSearchParams();
+		if (pagingOffset != null) queryFactory.set("paging-offset", pagingOffset);
+		if (pagingLimit != null) queryFactory.set("paging-limit", pagingLimit);
+
+		const resource = this.#origin + "/services/tracks/titles" + (queryFactory.size === 0 ? "" : "?" + queryFactory.toString());
+		const headers = { "Accept": "application/json" };
+
+		const response = await basicFetch(resource, {
+			method: "GET",
+			headers: headers,
+			credentials: "include"
+		});
+
+		if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+		return await response.json();
 	}
+
 }
 
 

@@ -69,29 +69,35 @@ class ServerAlbumEditorTabPaneController extends TabPaneController {
 	 */
 	async #displayAllAlbums () {
 		const albums = await RADIO_SERVICE.queryAlbums();
-		// console.log(albums);
+		console.log("albums:" + albums);
+		console.log("test passed");
 
+
+		const tableRowTemplate = await this.queryTemplate("server-albums-viewer-row");
 		this.albumsViewerTableBody.innerHTML = "";
-		const albumsViewerTableRowTemplate = await this.queryTemplate("server-albums-viewer-row");
 		for (const album of albums) {
-			const tableRow = albumsViewerTableRowTemplate.content.firstElementChild.cloneNode(true);
-			this.albumsViewerTableBody.append(tableRow);
-
+			const tableRow = tableRowTemplate.content.firstElementChild.cloneNode(true);
+			this.albumsViewerTableBody.append(tableRow);	
+			
 			const accessButton = tableRow.querySelector("td.access>button");
-			const accessViewer = accessButton.querySelector("img");
-			const artistItem = tableRow.querySelector("td.artist");
-			const titleItem = tableRow.querySelector("td.title");
-			const genreItem = tableRow.querySelector("td.genre");
-			const releaseYearItem = tableRow.querySelector("td.release-year");
-			const trackTotalItem = tableRow.querySelector("td.track-total");
+			const accessButtonImageViewer = tableRow.querySelector("td.access>button>img");
+			accessButtonImageViewer.src = RADIO_SERVICE.documentsURI + "/" + album.attributes["cover-reference"];
 
-			accessButton.addEventListener("click", event => this.processDisplayAlbumEditor(album));
-			accessViewer.src = RADIO_SERVICE.documentsURI + "/" + album.attributes["cover-reference"];
-			artistItem.innerText = album.attributes["artist"] || "-";
-			titleItem.innerText = album.title || "-";
-			genreItem.innerText = album.attributes["genre"] || "-";
-			releaseYearItem.innerText = album.releaseYear.toString();
-			trackTotalItem.innerText = album.attributes["track-count"] + "/" + album.trackTotal;
+			const artist = tableRow.querySelector("td.artist");
+			artist.innerText = album.artist || "various artist";
+
+			const title = tableRow.querySelector("td.title");
+			title.innerText = album.title || "";
+
+			const genre = tableRow.querySelector("td.genre");
+			genre.innerText = album.genre || "various genre";
+
+			const year = tableRow.querySelector("td.release-year");
+			year.innerText = parseInt(album.releaseYear || "0");
+
+			const tracks = tableRow.querySelector("td.track-total");
+			tracks.innerText = (album.attributes["track-count"] || 0) + "/" + (album.trackTotal || 0);
+			accessButton.addEventListener("click", (event) => this.processDisplayAlbumEditor(album));
 		}
 	}
 
@@ -182,13 +188,11 @@ class ServerAlbumEditorTabPaneController extends TabPaneController {
 	async processSubmitAlbum (album) {
 		try {
 			album.title = this.albumEditorTitleInput.value.trim() || null;
-			album.releaseYear = window.parseInt(this.albumEditorReleaseYearInput.value.trim()) || new Date().getFullYear();
-			album.trackTotal =  window.parseInt(this.albumEditorTrackTotalInput.value.trim()) || 0;
-
+			album.releaseYear = (this.albumEditorReleaseYearInput.value) || (new Date().getFullYear());
+			album.trackTotal =  (this.albumEditorTrackTotalInput.value) || 0;
 			album.identity = await RADIO_SERVICE.insertOrUpdateAlbum(album);
 			album.version = (album.version || 0) + 1;
 
-			this.albumEditorTracksDivision.classList.remove("hidden");
 			this.messageOutput.value = "ok.";
 		} catch (error) {
 			this.messageOutput.value = error.message || error.toString();
@@ -206,8 +210,11 @@ class ServerAlbumEditorTabPaneController extends TabPaneController {
 			if (albumIdentity)
 				await RADIO_SERVICE.deleteAlbum(albumIdentity);
 
+			this.albumEditorSection.remove();
+			await this.#displayAllAlbums();
+			this.albumsViewerSection.classList.remove("hidden");
+
 			this.messageOutput.value = "ok.";
-			this.albumEditorCancelButton.click();
 		} catch (error) {
 			this.messageOutput.value = error.message || error.toString();
 			console.error(error);
@@ -228,41 +235,25 @@ class ServerAlbumEditorTabPaneController extends TabPaneController {
 			const tableRow = albumEditorTableRowTemplate.content.firstElementChild.cloneNode(true);
 			this.albumEditorTracksTableBody.append(tableRow);
 
-			const ordinalInput = tableRow.querySelector("td.ordinal>input");
-			ordinalInput.value = ((track.ordinal || 0) + 1).toString();
-			ordinalInput.disabled = !!track.identity;
+			tableRow.querySelector("td.action>button.submit").addEventListener("click", event => this.processSubmitTrack(albumIdentity, track, tableRow));
+			tableRow.querySelector("td.action>button.remove").addEventListener("click", event => this.processDeleteTrack(track.identity, tableRow));
+			//TODO Recoding existance;	
+			tableRow.querySelector("td.recording>button").addEventListener("click", event => tableRow.querySelector("td.recording>button").click());
+			if (track.recording) tableRow.querySelector("td.recording>button").innerText = track.recording.description || track.recording.type;
+			
+			const ordinal = tableRow.querySelector("td.ordinal>input");
+			ordinal.value = ((track.ordinal || 0) + 1).toString();
+			ordinal.disabled = !!track.identity;
 
-			const artistInput = tableRow.querySelector("td.artist>input");
-			artistInput.value = track.artist || "";
+			const artist = tableRow.querySelector("td.artist>input");
+			artist.value = track.artist || "";
 
-			const titleInput = tableRow.querySelector("td.title>input");
-			titleInput.value = track.title || "";
+			const title = tableRow.querySelector("td.title>input");
+			title.value = track.title || "";
 
-			const genreInput = tableRow.querySelector("td.genre>input");
-			genreInput.value = track.genre || "";
+			const genre = tableRow.querySelector("td.genre>input");
+			genre.value = track.genre || "";
 	
-			const recordingChooser = tableRow.querySelector("td.recording>input");
-			recordingChooser.addEventListener("change", event => this.processSubmitTrackRecording(track, event.currentTarget.files[0], tableRow));
-
-			const recordingButton = tableRow.querySelector("td.recording>button");
-			recordingButton.addEventListener("click", event => recordingChooser.click());
-			if ("recording-reference" in track.attributes) {
-				const recording = await RADIO_SERVICE.findDocument(track.attributes["recording-reference"]);
-				recordingButton.innerText = recording.description || recording.type;
-			}
-
-			const submitButton = tableRow.querySelector("td.action>button.submit");
-			submitButton.addEventListener("click", event => this.processSubmitTrack(albumIdentity, track, tableRow));
-
-			const removeButton = tableRow.querySelector("td.action>button.remove");
-			removeButton.addEventListener("click", event => this.processDeleteTrack(track.identity, tableRow));
-			removeButton.disabled = !track.identity;
-
-			if (track.attributes["author-reference"] !== this.sessionOwner.identity && this.sessionOwner.group !== "ADMIN") {
-				ordinalInput.disabled = artistInput.disabled = true;
-				titleInput.disabled = genreInput.disabled = true;
-				recordingButton.disabled = submitButton.disabled = removeButton.disabled = true;
-			}
 		} catch (error) {
 			this.messageOutput.value = error.message || error.toString();
 			console.error(error);
@@ -278,10 +269,7 @@ class ServerAlbumEditorTabPaneController extends TabPaneController {
 	 */
 	async processSubmitTrackRecording (track, recordingFile, tableRow) {
 		try {
-			if (!recordingFile.type || !recordingFile.type.startsWith("audio/")) throw new RangeError();
-			track.attributes["recording-reference"] = await RADIO_SERVICE.insertOrUpdateDocument(recordingFile);
-			tableRow.querySelector("td.recording>button").innerText = recordingFile.name;
-
+			// TODO
 			this.messageOutput.value = "ok.";
 		} catch (error) {
 			this.messageOutput.value = error.message || error.toString();
@@ -298,16 +286,7 @@ class ServerAlbumEditorTabPaneController extends TabPaneController {
 	 */
 	async processSubmitTrack (albumIdentity, track, tableRow) {
 		try {
-			track.ordinal = window.parseInt(tableRow.querySelector("td.ordinal>input").value.trim()) - 1;
-			track.artist = tableRow.querySelector("td.artist>input").value.trim() || null;
-			track.title = tableRow.querySelector("td.title>input").value.trim() || null;
-			track.genre = tableRow.querySelector("td.genre>input").value.trim() || null;
-
-			track.identity = await RADIO_SERVICE.insertOrUpdateTrack(albumIdentity, track);
-			track.version = (track.version || 0) + 1;
-
-			tableRow.querySelector("td.ordinal>input").disabled = true;
-			tableRow.querySelector("td.action>button.remove").disabled = false;
+			// TODO
 			this.messageOutput.value = "ok.";
 		} catch (error) {
 			this.messageOutput.value = error.message || error.toString();
@@ -323,10 +302,7 @@ class ServerAlbumEditorTabPaneController extends TabPaneController {
 	 */
 	async processDeleteTrack (trackIdentity, tableRow) {
 		try {
-			if (trackIdentity)
-				await RADIO_SERVICE.deleteTrack(trackIdentity);
-
-			tableRow.remove();
+			// TODO
 			this.messageOutput.value = "ok.";
 		} catch (error) {
 			this.messageOutput.value = error.message || error.toString();
@@ -339,9 +315,16 @@ class ServerAlbumEditorTabPaneController extends TabPaneController {
 	 * Removes the editor section and re-displays the refreshed table section.
 	 */
 	async processCancel () {
-		this.albumEditorSection.remove();
-		await this.#displayAllAlbums();
-		this.albumsViewerSection.classList.remove("hidden");
+		try {
+			this.albumEditorSection.remove();
+			await this.#displayAllAlbums();
+			this.albumsViewerSection.classList.remove("hidden");
+		
+			this.messageOutput.value = "ok.";
+		} catch (error) {
+			this.messageOutput.value = error.message || error.toString();
+			console.error(error);
+		}
 	}
 }
 

@@ -287,6 +287,29 @@ class ServerAlbumEditorTabPaneController extends TabPaneController {
 	async processSubmitTrack (albumIdentity, track, tableRow) {
 		try {
 			// TODO
+			const ordinalInput = tableRow.querySelector("td.ordinal>input");
+			const artistInput = tableRow.querySelector("td.artist>input");
+			const titleInput = tableRow.querySelector("td.title>input");
+			const genreInput = tableRow.querySelector("td.genre>input");
+
+			track.ordinal = parseInt(ordinalInput.value) || 1;
+			track.artist = artistInput.value.trim() || null;
+			track.title = titleInput.value.trim() || null;
+			track.genre = genreInput.value.trim() || null;
+
+			// Prepare attributes object if not present
+			if (!track.attributes) {
+				track.attributes = {
+					"author-reference": this.sessionOwner.identity
+				};
+			}
+
+			// Submit track to backend
+			track.identity = await RADIO_SERVICE.insertOrUpdateTrack(albumIdentity, track);
+			track.version = (track.version || 0) + 1;
+
+			// Disable the ordinal input to prevent further changes
+			ordinalInput.disabled = true;
 			this.messageOutput.value = "ok.";
 		} catch (error) {
 			this.messageOutput.value = error.message || error.toString();

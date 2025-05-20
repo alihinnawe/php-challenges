@@ -402,7 +402,7 @@ class RadioServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async deleteAlbum(albumIdentity) {
+	async deleteAlbum (albumIdentity) {
 		if (albumIdentity == null) throw new ReferenceError();
 		if (typeof albumIdentity !== "number") throw new TypeError();
 
@@ -432,7 +432,7 @@ class RadioServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async queryAlbumTracks(albumIdentity, pagingOffset, pagingLimit) {
+	async queryAlbumTracks (albumIdentity, pagingOffset, pagingLimit) {
 		if (albumIdentity == null) throw new ReferenceError();
 		if (typeof albumIdentity !== "number") throw new TypeError();
 
@@ -474,7 +474,7 @@ class RadioServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async queryTracks(pagingOffset, pagingLimit, minCreated, maxCreated, minModified, maxModified, minOrdinal, maxOrdinal, artists = [], titles = [], genres = [], recorded) {
+	async queryTracks (pagingOffset, pagingLimit, minCreated, maxCreated, minModified, maxModified, minOrdinal, maxOrdinal, artists = [], titles = [], genres = [], recorded) {
 		const queryFactory = new URLSearchParams();
 		if (pagingOffset != null) queryFactory.set("paging-offset", pagingOffset);
 		if (pagingLimit != null) queryFactory.set("paging-limit", pagingLimit);
@@ -511,7 +511,7 @@ class RadioServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async findTrack(trackIdentity) {
+	async findTrack (trackIdentity) {
 		if (trackIdentity == null) throw new ReferenceError();
 		if (typeof trackIdentity !== "number") throw new TypeError();
 
@@ -539,17 +539,14 @@ class RadioServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async insertOrUpdateTrack(albumIdentity, track) {
+	async insertOrUpdateTrack (albumIdentity, track) {
 		if (albumIdentity == null) throw new ReferenceError();
 		if (typeof albumIdentity !== "number") throw new TypeError();
 		if (track == null) throw new ReferenceError();
 		if (typeof track !== "object") throw new TypeError();
 
 		const resource = this.#origin + "/services/albums/" + albumIdentity + "/tracks";
-		const headers = {
-			"Content-Type": "application/json",
-			"Accept": "text/plain"
-		};
+		const headers = {"Content-Type": "application/json", "Accept": "text/plain"};
 
 		const response = await basicFetch(resource, {
 			method: "POST",
@@ -572,7 +569,7 @@ class RadioServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async updateTrackLyrics(track) {
+	async updateTrackLyrics (track) {
 		if (track == null) throw new ReferenceError();
 		if (typeof track !== "object" || typeof track.identity !== "number" || typeof track.lyrics !== "string") {
 			throw new TypeError();
@@ -605,7 +602,7 @@ class RadioServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async deleteTrack(trackIdentity) {
+	async deleteTrack (trackIdentity) {
 		if (trackIdentity == null) throw new ReferenceError();
 		if (typeof trackIdentity !== "number") throw new TypeError();
 
@@ -634,7 +631,7 @@ class RadioServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async queryTrackArtists(pagingOffset, pagingLimit) {
+	async queryTrackArtists (pagingOffset, pagingLimit) {
 		const queryFactory = new URLSearchParams();
 		if (pagingOffset != null) queryFactory.set("paging-offset", pagingOffset);
 		if (pagingLimit != null) queryFactory.set("paging-limit", pagingLimit);
@@ -664,7 +661,7 @@ class RadioServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async queryTrackGenres(pagingOffset, pagingLimit) {
+	async queryTrackGenres (pagingOffset, pagingLimit) {
 		const queryFactory = new URLSearchParams();
 		if (pagingOffset != null) queryFactory.set("paging-offset", pagingOffset);
 		if (pagingLimit != null) queryFactory.set("paging-limit", pagingLimit);
@@ -694,7 +691,7 @@ class RadioServiceProxy extends Object {
 	 * @throws if the TCP connection to the web-service cannot be established, 
 	 *			or if the HTTP response is not ok
 	 */
-	async queryTrackTitles(pagingOffset, pagingLimit) {
+	async queryTrackTitles (pagingOffset, pagingLimit) {
 		const queryFactory = new URLSearchParams();
 		if (pagingOffset != null) queryFactory.set("paging-offset", pagingOffset);
 		if (pagingLimit != null) queryFactory.set("paging-limit", pagingLimit);

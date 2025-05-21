@@ -3,6 +3,7 @@ import RADIO_SERVICE from "../../../share/radio-service.js";
 import RapidGeniusLyricsServiceProxy from "../../../share/rapid-genius-lyrics-service.js";
 import ELEMENT_FACTORY from "../../../share/element-factory.js";
 import IntegerMath from "../../../share/integer-math.js";
+import CrossfadeRack from "../../../share/crossfade-rack.js";
 import { sleep } from "../../../share/threads.js";
 
 
@@ -16,7 +17,7 @@ const QUERY_TRACKS_LIMIT = 50;
  * Server track listener tab pane controller type.
  */
 class ServerTrackListenerTabPaneController extends TabPaneController {
-	#trackSources;
+	#trackSamplers;
 	#tracks;
 
 
@@ -25,7 +26,7 @@ class ServerTrackListenerTabPaneController extends TabPaneController {
 	 */
 	constructor () {
 		super("button.server-track-listener");
-		this.#trackSources = [];
+		this.#trackSamplers = [];
 		this.#tracks = [];
 
 		// register controller event listeners 
@@ -35,12 +36,12 @@ class ServerTrackListenerTabPaneController extends TabPaneController {
 
 
 	// getter/setter operations
-	get audioMixer () { return this.sharedProperties["audio-context"]; }
+	get audioContext () { return this.sharedProperties["audio-context"]; }
 
 	get tracksQuerySection () { return this.center.querySelector("section.server-tracks-query"); }
 	get tracksQueryButton () { return this.tracksQuerySection.querySelector("div.control>button.query"); }
-	get tracksQueryArtistSelector () { return this.tracksQuerySection.querySelector("div.criteria>span.artist>select"); }
 	get tracksQueryGenreSelector () { return this.tracksQuerySection.querySelector("div.criteria>span.genre>select"); }
+	get tracksQueryArtistSelector () { return this.tracksQuerySection.querySelector("div.criteria>span.artist>select"); }
 	get tracksQueryControlSpan () { return this.tracksQuerySection.querySelector("div.criteria>span.control"); }
 	get tracksQueryMasterVolumeInput () { return this.tracksQueryControlSpan.querySelector("input.volume"); }
 	get tracksQueryCompressionRatioInput () { return this.tracksQueryControlSpan.querySelector("input.compression-ratio"); }
@@ -62,7 +63,7 @@ class ServerTrackListenerTabPaneController extends TabPaneController {
 			this.center.append(tracksQuerySectionTemplate.content.firstElementChild.cloneNode(true));
 
 			// initialize audio system components
-			await this.audioMixer.audioWorklet.addModule("../../../share/audio-processors.js");
+			await this.audioContext.audioWorklet.addModule("../../../share/audio-processors.js");
 
 			// register basic event listeners
 			this.tracksQueryButton.addEventListener("click", event => this.processQueryMatchingTracks());
@@ -89,12 +90,12 @@ class ServerTrackListenerTabPaneController extends TabPaneController {
 	 */
 	processDeactivated () {
 		try {
-			for (const trackSource of this.#trackSources) {
-				trackSource.stop();
-				trackSource.disconnect();
+			for (const trackSampler of this.#trackSamplers) {
+				trackSampler.stop();
+				trackSampler.disconnect();
 			}
 
-			this.#trackSources.length = 0;
+			this.#trackSamplers.length = 0;
 			this.#tracks.length = 0;
 		} catch (error) {
 			this.messageOutput.value = error.toString();
@@ -112,7 +113,36 @@ class ServerTrackListenerTabPaneController extends TabPaneController {
 	 * @param period the repetition period in seconds
 	 */
 	async #periodicallyScheduleTrackPlayback (period) {
-		// TODO
+		let trackIndex = 0;
+
+		try {
+			while (this.active) {
+				if (this.#tracks.length > 0) {
+					const track = this.#tracks.shift();
+
+					const trackRecording = await RADIO_SERVICE.findDocument(track.attributes["recording-reference"], false);
+					const trackSampler = new AudioBufferSourceNode(this.audioContext);
+					trackSampler.connect(this.audioContext.destination);
+					trackSampler.buffer = await this.audioContext.decodeAudioData(trackRecording);
+
+					const nextTrackStartTime = this.audioContext.currentTime;
+					const currentTrackStopTime = nextTrackStartTime + trackSampler.buffer.duration;
+					trackSampler.start(nextTrackStartTime);
+					this.#trackSamplers.push(trackSampler);
+
+					const durationText = Math.floor(trackSampler.buffer.duration / 60).toString() + ":" + Math.round(trackSampler.buffer.duration % 60).toString();
+					this.trackPlaylistTableBody.querySelector("tr:nth-of-type(" + (trackIndex + 1) + ")>td.duration").innerText = durationText;
+					trackIndex += 1;
+
+					await sleep(Math.round(trackSampler.buffer.duration * SECOND_MILLIES));
+				} else {
+					await sleep(period * SECOND_MILLIES);
+				}
+			}
+		} catch (error) {
+			this.messageOutput.value = error.toString();
+			console.error(error);
+		}
 	}
 
 
@@ -120,6 +150,42 @@ class ServerTrackListenerTabPaneController extends TabPaneController {
 	 * Expands the playlist with tracks matching the selected search criteria.
 	 */
 	async processQueryMatchingTracks () {
-		// TODO
+		try {
+			const genres = Array.from(this.tracksQueryGenreSelector.selectedOptions).map(option => option.value);
+			const artists = Array.from(this.tracksQueryArtistSelector.selectedOptions).map(option => option.value);
+			const tracks = await RADIO_SERVICE.queryTracks(null, QUERY_TRACKS_LIMIT, null, null, null, null, null, null, artists, [], genres, true);
+			console.log(tracks);
+
+			if (!this.trackPlaylistSection) {
+				const trackPlaylistSectionTemplate = await this.queryTemplate("server-track-playlist");
+				this.center.append(trackPlaylistSectionTemplate.content.firstElementChild.cloneNode(true));
+			}
+
+			const tableRowTemplate = await this.queryTemplate("server-track-playlist-row");
+			for (const track of tracks) {
+				this.#tracks.push(track);
+	
+				const tableRow = tableRowTemplate.content.firstElementChild.cloneNode(true);
+				this.trackPlaylistTableBody.append(tableRow);
+	
+				tableRow.querySelector("td.cover>img").src = RADIO_SERVICE.documentsURI + "/" + track.attributes["album-cover-reference"];
+				tableRow.querySelector("td.artist").innerText = track.artist;
+				tableRow.querySelector("td.title").innerText = track.title;
+			}
+
+			this.messageOutput.value = "";
+		} catch (error) {
+			this.messageOutput.value = error.toString();
+			console.error(error);
+		}
 	}
 }
+
+
+/*
+ * Registers an event handler for the browser window's load event.
+ */
+window.addEventListener("load", event => {
+	const controller = new ServerTrackListenerTabPaneController();
+	console.log(controller);
+});

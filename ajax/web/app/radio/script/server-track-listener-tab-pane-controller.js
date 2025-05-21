@@ -17,6 +17,7 @@ const QUERY_TRACKS_LIMIT = 50;
  * Server track listener tab pane controller type.
  */
 class ServerTrackListenerTabPaneController extends TabPaneController {
+	#crossfadeDuration;
 	#trackSamplers;
 	#tracks;
 
@@ -26,6 +27,7 @@ class ServerTrackListenerTabPaneController extends TabPaneController {
 	 */
 	constructor () {
 		super("button.server-track-listener");
+		this.#crossfadeDuration = 0;
 		this.#trackSamplers = [];
 		this.#tracks = [];
 
@@ -43,7 +45,7 @@ class ServerTrackListenerTabPaneController extends TabPaneController {
 	get tracksQueryGenreSelector () { return this.tracksQuerySection.querySelector("div.criteria>span.genre>select"); }
 	get tracksQueryArtistSelector () { return this.tracksQuerySection.querySelector("div.criteria>span.artist>select"); }
 	get tracksQueryControlSpan () { return this.tracksQuerySection.querySelector("div.criteria>span.control"); }
-	get tracksQueryMasterVolumeInput () { return this.tracksQueryControlSpan.querySelector("input.volume"); }
+	get tracksQueryVolumeInput () { return this.tracksQueryControlSpan.querySelector("input.volume"); }
 	get tracksQueryCompressionRatioInput () { return this.tracksQueryControlSpan.querySelector("input.compression-ratio"); }
 	get tracksQueryCrossfadeDurationInput () { return this.tracksQueryControlSpan.querySelector("input.crossfade"); }
 
@@ -67,6 +69,8 @@ class ServerTrackListenerTabPaneController extends TabPaneController {
 
 			// register basic event listeners
 			this.tracksQueryButton.addEventListener("click", event => this.processQueryMatchingTracks());
+			this.tracksQueryCrossfadeDurationInput.addEventListener("input", event => this.#crossfadeDuration = window.parseFloat(event.currentTarget.value.trim()));
+			this.tracksQueryCrossfadeDurationInput.dispatchEvent(new InputEvent("input"));
 
 			// asynchronously start playback loop
 			this.#periodicallyScheduleTrackPlayback(10);
@@ -122,13 +126,25 @@ class ServerTrackListenerTabPaneController extends TabPaneController {
 
 					const trackRecording = await RADIO_SERVICE.findDocument(track.attributes["recording-reference"], false);
 					const trackSampler = new AudioBufferSourceNode(this.audioContext);
-					trackSampler.connect(this.audioContext.destination);
 					trackSampler.buffer = await this.audioContext.decodeAudioData(trackRecording);
+					this.#trackSamplers.push(trackSampler);
+					if (!this.active) continue;
+
+					const companderNode = new AudioWorkletNode(this.audioContext, "compander-processor");
+					this.tracksQueryCompressionRatioInput.addEventListener("input", event => companderNode.parameters.get("ratio").value = 2 ** window.parseFloat(event.currentTarget.value.trim()));
+					this.tracksQueryCompressionRatioInput.dispatchEvent(new InputEvent("input"));
+
+					const volumeNode = new GainNode(this.audioContext);
+					this.tracksQueryVolumeInput.addEventListener("input", event => volumeNode.gain.value = window.parseFloat(event.currentTarget.value.trim()));
+					this.tracksQueryVolumeInput.dispatchEvent(new InputEvent("input"));
+
+					trackSampler.connect(companderNode);
+					companderNode.connect(volumeNode);
+					volumeNode.connect(this.audioContext.destination);
 
 					const nextTrackStartTime = this.audioContext.currentTime;
 					const currentTrackStopTime = nextTrackStartTime + trackSampler.buffer.duration;
 					trackSampler.start(nextTrackStartTime);
-					this.#trackSamplers.push(trackSampler);
 
 					const durationText = Math.floor(trackSampler.buffer.duration / 60).toString() + ":" + Math.round(trackSampler.buffer.duration % 60).toString();
 					this.trackPlaylistTableBody.querySelector("tr:nth-of-type(" + (trackIndex + 1) + ")>td.duration").innerText = durationText;

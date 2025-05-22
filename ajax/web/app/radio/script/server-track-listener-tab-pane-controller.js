@@ -150,7 +150,6 @@ class ServerTrackListenerTabPaneController extends TabPaneController {
 		try {
 			let fadeOutGainNode = null;
 			let fadeInGainNode = null;
-			let predecessorStopTime = this.audioContext.currentTime;
 
 			while (this.active) {
 				if (this.#trackRecordings.length > 0 && this.#trackSamplers.length < 2) {
@@ -182,8 +181,10 @@ class ServerTrackListenerTabPaneController extends TabPaneController {
 
 					trackSampler.start(this.audioContext.currentTime);
 					if (this.#trackSamplers.length == 2) {
-						fadeOutGainNode.gain.linearRampToValueAtTime(0, startTime + this.#crossfadeDuration);
-						fadeInGainNode.gain.linearRampToValueAtTime(1, startTime + this.#crossfadeDuration);
+						fadeOutGainNode.gain.linearRampToValueAtTime(fadeOutNode.gain.value, this.audioContext.currentTime);
+						fadeInGainNode.gain.linearRampToValueAtTime(fadeInNode.gain.value, this.audioContext.currentTime);
+						fadeOutGainNode.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + this.#crossfadeDuration);
+						fadeInGainNode.gain.linearRampToValueAtTime(1, this.audioContext.currentTime + this.#crossfadeDuration);
 					};
 					this.#trackSamplers.push(trackSampler);
 

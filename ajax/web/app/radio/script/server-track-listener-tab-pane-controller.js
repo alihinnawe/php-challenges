@@ -3,7 +3,6 @@ import RADIO_SERVICE from "../../../share/radio-service.js";
 import RapidGeniusLyricsServiceProxy from "../../../share/rapid-genius-lyrics-service.js";
 import ELEMENT_FACTORY from "../../../share/element-factory.js";
 import IntegerMath from "../../../share/integer-math.js";
-import CrossfadeRack from "../../../share/crossfade-rack.js";
 import { sleep } from "../../../share/threads.js";
 
 
@@ -17,10 +16,10 @@ const QUERY_TRACKS_LIMIT = 50;
  * Server track listener tab pane controller type.
  */
 class ServerTrackListenerTabPaneController extends TabPaneController {
-	#crossfadeDuration;
-	#trackSamplers;
-	#startedTrackSamplers;
 	#tracks;
+	#trackSamplers;
+	#trackRecordings;
+	#crossfadeDuration;
 
 
 	/**
@@ -28,10 +27,10 @@ class ServerTrackListenerTabPaneController extends TabPaneController {
 	 */
 	constructor () {
 		super("button.server-track-listener");
-		this.#crossfadeDuration = 0;
-		this.#trackSamplers = [];
-		this.#startedTrackSamplers = [];
 		this.#tracks = [];
+		this.#trackRecordings = [];
+		this.#trackSamplers = [];
+		this.#crossfadeDuration = 0;
 
 		// register controller event listeners 
 		this.addEventListener("activated", event => this.processActivated());
@@ -75,8 +74,8 @@ class ServerTrackListenerTabPaneController extends TabPaneController {
 			this.tracksQueryCrossfadeDurationInput.dispatchEvent(new InputEvent("input"));
 
 			// asynchronously start playback loop
-			this.#periodicallyQueryAndDecodeTrackRecording(10);
-			this.#periodicallyScheduleTrackPlayback(5);
+			this.#periodicallyQueryAndDecodeTrackRecording();
+			this.#periodicallyScheduleTrackPlayback();
 
 			const genresAndArtists = await Promise.all([ RADIO_SERVICE.queryTrackGenres(), RADIO_SERVICE.queryTrackArtists() ]);
 			for (const genre of genresAndArtists[0])
@@ -97,7 +96,7 @@ class ServerTrackListenerTabPaneController extends TabPaneController {
 	 */
 	processDeactivated () {
 		try {
-			for (const trackSampler of this.#startedTrackSamplers) {
+			for (const trackSampler of this.#trackSamplers) {
 				try {
 					trackSampler.stop();
 				} catch (error) {
@@ -106,7 +105,7 @@ class ServerTrackListenerTabPaneController extends TabPaneController {
 				trackSampler.disconnect();
 			}
 
-			this.#trackSamplers.length = 0;
+			this.#trackRecordings.length = 0;
 			this.#tracks.length = 0;
 		} catch (error) {
 			this.messageOutput.value = error.toString();
@@ -116,21 +115,22 @@ class ServerTrackListenerTabPaneController extends TabPaneController {
 
 
 	/**
-	 * @param period the repetition period in seconds
+	 *
 	 */
-	async #periodicallyQueryAndDecodeTrackRecording (period) {
+	async #periodicallyQueryAndDecodeTrackRecording () {
 		try {
 			while (this.active) {
-				if (this.#tracks.length > 0) {
+				if (this.#tracks.length > 0 && this.#trackRecordings.length < 5) {
 					const track = this.#tracks.shift();
 
-					const trackRecording = await RADIO_SERVICE.findDocument(track.attributes["recording-reference"], false);
-					const trackSampler = new AudioBufferSourceNode(this.audioContext);
-					trackSampler.buffer = await this.audioContext.decodeAudioData(trackRecording);
-					this.#trackSamplers.push(trackSampler);
+					const trackBuffer = await RADIO_SERVICE.findDocument(track.attributes["recording-reference"], false);
+					const trackRecording = await this.audioContext.decodeAudioData(trackBuffer);
+					if (!this.active) continue;
+
+					this.#trackRecordings.push(trackRecording);
 				}
 
-				await sleep(period * SECOND_MILLIES);
+				await sleep(1 * SECOND_MILLIES);
 			}
 		} catch (error) {
 			this.messageOutput.value = error.toString();
@@ -145,15 +145,17 @@ class ServerTrackListenerTabPaneController extends TabPaneController {
 	 * any errors while active, and subsequently calling setTimeout(), avoids two mayor
 	 * pitfalls compared to using setInterval(): No continued scheduling while inactive,
 	 * and no overlapping calls of methods running longer than the repetition period!
-	 * @param period the repetition period in seconds
 	 */
-	async #periodicallyScheduleTrackPlayback (period) {
-		let trackIndex = 0;
-
+	async #periodicallyScheduleTrackPlayback () {
 		try {
+			let fadeOutGainNode = null;
+			let fadeInGainNode = null;
+			let predecessorStopTime = this.audioContext.currentTime;
+
 			while (this.active) {
-				if (this.#trackSamplers.length > 0) {
-					const trackSampler = this.#trackSamplers.shift();
+				if (this.#trackRecordings.length > 0 && this.#trackSamplers.length < 2) {
+					const trackSampler = new AudioBufferSourceNode(this.audioContext);
+					trackSampler.buffer = this.#trackRecordings.shift();
 
 					const companderNode = new AudioWorkletNode(this.audioContext, "compander-processor");
 					this.tracksQueryCompressionRatioInput.addEventListener("input", event => companderNode.parameters.get("ratio").value = 2 ** window.parseFloat(event.currentTarget.value.trim()));
@@ -162,21 +164,35 @@ class ServerTrackListenerTabPaneController extends TabPaneController {
 					const volumeNode = new GainNode(this.audioContext);
 					this.tracksQueryVolumeInput.addEventListener("input", event => volumeNode.gain.value = window.parseFloat(event.currentTarget.value.trim()));
 					this.tracksQueryVolumeInput.dispatchEvent(new InputEvent("input"));
-
+					
+					fadeOutGainNode = fadeInGainNode;
+					fadeInGainNode = new GainNode(this.audioContext);
+					fadeInGainNode.gain.value = 2 - this.#trackSamplers.length;
+					
 					trackSampler.connect(companderNode);
 					companderNode.connect(volumeNode);
-					volumeNode.connect(this.audioContext.destination);
+					volumeNode.connect(fadeInGainNode);
+					fadeInGainNode.connect(this.audioContext.destination);
+
+					trackSampler.addEventListener("ended", event => {
+						if (!this.active) return;
+						this.#trackSamplers.shift().disconnect();
+						this.trackPlaylistTableBody.firstElementChild.remove();
+					});
 
 					trackSampler.start(this.audioContext.currentTime);
-					this.#startedTrackSamplers.push(trackSampler);
+					if (this.#trackSamplers.length == 2) {
+						fadeOutGainNode.gain.linearRampToValueAtTime(0, startTime + this.#crossfadeDuration);
+						fadeInGainNode.gain.linearRampToValueAtTime(1, startTime + this.#crossfadeDuration);
+					};
+					this.#trackSamplers.push(trackSampler);
 
 					const durationText = Math.floor(trackSampler.buffer.duration / 60).toString() + ":" + Math.round(trackSampler.buffer.duration % 60).toString();
-					this.trackPlaylistTableBody.querySelector("tr:nth-of-type(" + (trackIndex + 1) + ")>td.duration").innerText = durationText;
-					trackIndex += 1;
+					this.trackPlaylistTableBody.querySelector("tr:nth-of-type(" + this.#trackSamplers.length + ")>td.duration").innerText = durationText;
 
-					await sleep(Math.round(trackSampler.buffer.duration * SECOND_MILLIES));
+					await sleep(Math.round(Math.max(trackSampler.buffer.duration - this.#crossfadeDuration, 0) * SECOND_MILLIES));
 				} else {
-					await sleep(period * SECOND_MILLIES);
+					await sleep(1 * SECOND_MILLIES);
 				}
 			}
 		} catch (error) {

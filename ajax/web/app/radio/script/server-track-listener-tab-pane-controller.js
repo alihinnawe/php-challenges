@@ -211,7 +211,9 @@ class ServerTrackListenerTabPaneController extends TabPaneController {
 			const genres = Array.from(this.tracksQueryGenreSelector.selectedOptions).map(option => option.value);
 			const artists = Array.from(this.tracksQueryArtistSelector.selectedOptions).map(option => option.value);
 			const tracks = await RADIO_SERVICE.queryTracks(null, QUERY_TRACKS_LIMIT, null, null, null, null, null, null, artists, [], genres, true);
-			console.log(tracks);
+			tracks.forEach(track => track.weight = Math.random());
+			tracks.sort((leftTrack, rightTrack) => leftTrack.weight - rightTrack.weight);
+			tracks.forEach(track => delete track.weight);
 
 			if (!this.trackPlaylistSection) {
 				const trackPlaylistSectionTemplate = await this.queryTemplate("server-track-playlist");

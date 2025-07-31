@@ -1,21 +1,13 @@
-<?php
-try {
-  $pdo = new PDO('mysql:host=mysql;dbname=ijdb;charset=utf8mb4', 'hinnawe', '111111');
-
-  $sql = 'DELETE FROM `joke` WHERE `id` = :id';
-
-  $stmt = $pdo->prepare($sql);
-
-  $stmt->bindValue(':id', $_POST['id']);
-  $stmt->execute();
-
-  header('location: jokes.php');
+ <?php
+ try {
+ include __DIR__ . '/../includes/DatabaseConnection.php';
+ include __DIR__ . '/../includes/DatabaseFunctions.php';
+ deleteJoke($pdo, $_POST['id']);
+ header('location: jokes.php');
+ } catch (PDOException $e) {
+ $title = 'An error has occurred';
+ $output = 'Unable to connect to the database server: ' . $e->getMessage() .
+  ' in ' .
+ $e->getFile() . ':' . $e->getLine();
 }
-catch (PDOException $e) {
-  $title = 'An error has occurred';
-
-  $output = 'Unable to connect to the database server: ' . $e->getMessage() . ' in ' .
-  $e->getFile() . ':' . $e->getLine();
-}
-
-include  __DIR__ . '/../templates/layout.html.php';
+ include  __DIR__ . '/../templates/layout.html.php';

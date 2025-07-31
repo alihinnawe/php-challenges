@@ -1,20 +1,15 @@
 <?php
- if (isset($_POST['joketext'])) {
+if (isset($_POST['joketext'])) {
  try {
-	include __DIR__ . '/../includes/DatabaseConnection.php';
-	$sql = 'INSERT INTO `joke` SET
-	`joketext` = :joketext,
-	`jokedate` = CURDATE()';
-	$stmt = $pdo->prepare($sql);
-	$stmt->bindValue(':joketext', $_POST['joketext']);
-	$stmt->execute();
-	header('location: jokes.php');
-	exit;
-
- } catch (PDOException $e) {
-	 $title = 'An error has occurred';
-	 $output = 'Database error: ' . $e->getMessage() . ' in ' .
-	 $e->getFile() . ':' . $e->getLine();
+ include __DIR__ . '/../includes/DatabaseConnection.php';
+ include __DIR__ . '/../includes/DatabaseFunctions.php';
+ insertJoke($pdo, $_POST['joketext'], 1);
+ header('location: jokes.php');
+ }
+ catch (PDOException $e) {
+ $title = 'An error has occurred';
+ $output = 'Database error: ' . $e->getMessage() . ' in ' .
+ $e->getFile() . ':' . $e->getLine();
  }
  } else {
 	 $title = 'Add a new joke';
